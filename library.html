@@ -1,0 +1,428 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Dashboard</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; background: #f4f6fb; color: #263247; padding: 30px 18px; }
+        .container { max-width: 1250px; margin: auto; }
+        .header, .section-header { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
+        .header { margin-bottom: 28px; }
+        .header h1 { font-size: 30px; margin-bottom: 8px; }
+        .header p, .muted, .count { color: #68758a; }
+        .actions, .row-actions, .form-buttons { display: flex; gap: 9px; flex-wrap: wrap; align-items: center; }
+        .btn { display: inline-block; padding: 10px 14px; border: 0; border-radius: 8px; text-decoration: none; font-size: 13px; cursor: pointer; font-weight: bold; text-align: center; }
+        .btn-primary { background: #4355db; color: white; }
+        .btn-secondary { background: #e6e9f5; color: #35415b; }
+        .btn-danger { background: #ffe7e7; color: #c62828; }
+        .btn:hover { opacity: .85; }
+        .messages { margin-bottom: 20px; }
+        .message { background: #e4f7e9; color: #216e39; border-radius: 8px; padding: 12px 15px; margin-bottom: 8px; }
+        .message.error { background: #ffe7e7; color: #c62828; }
+        .section { background: white; border-radius: 14px; padding: 24px; margin-bottom: 25px; box-shadow: 0 5px 22px rgba(30,45,80,.06); }
+        .section-header { margin-bottom: 18px; }
+        .section-header h2 { font-size: 21px; }
+        .count { font-size: 13px; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: 13px; margin-bottom: 25px; }
+        .stat { background: white; border-radius: 12px; padding: 18px; box-shadow: 0 5px 22px rgba(30,45,80,.05); }
+        .stat strong { display: block; font-size: 25px; color: #4355db; margin-top: 7px; }
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 650px; }
+        th, td { padding: 12px 11px; text-align: left; border-bottom: 1px solid #edf0f5; vertical-align: middle; font-size: 13px; }
+        th { background: #f8f9fd; color: #657188; font-size: 11px; text-transform: uppercase; }
+        .item-image { width: 55px; height: 68px; object-fit: cover; border-radius: 7px; background: #edf0f5; }
+        .author-image { width: 52px; height: 52px; object-fit: cover; border-radius: 50%; background: #edf0f5; }
+        .no-image { width: 55px; height: 68px; background: #edf0f5; border-radius: 7px; display: grid; place-items: center; color: #929bad; font-size: 10px; }
+        .author-placeholder { width: 52px; height: 52px; border-radius: 50%; }
+        .item-title { font-weight: bold; color: #263247; }
+        .price { color: #27834c; font-weight: bold; }
+        .row-actions .btn { padding: 7px 9px; font-size: 11px; }
+        .delete-form { display: inline; }
+        .empty { text-align: center; padding: 30px 12px; color: #7b879b; }
+        .footer { text-align: center; color: #929bad; font-size: 13px; padding: 12px; }
+        .form-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+        .field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+        .field label { font-size: 13px; font-weight: bold; color: #35415b; }
+        .field input, .field select { width: 100%; padding: 10px; border: 1px solid #dce1eb; border-radius: 8px; font-size: 14px; background: white; color: #263247; }
+        .field input:focus, .field select:focus { outline: none; border-color: #4355db; }
+        .form-buttons { margin-top: 16px; }
+        .form-note { color: #7b879b; font-size: 12px; margin-top: 6px; }
+        .edit-form { display: none; margin-top: 12px; padding: 14px; background: #f8f9fd; border-radius: 10px; min-width: 260px; }
+        .edit-form.open { display: block; }
+        .edit-form .field { margin-bottom: 10px; }
+        .filters { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 13px; align-items: end; }
+        .check-list { display: flex; flex-wrap: wrap; gap: 10px 16px; margin-top: 9px; }
+        .check-list label { font-size: 13px; display: inline-flex; align-items: center; gap: 5px; }
+        .report-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); gap: 14px; }
+        .report-card { background: #f8f9fd; border: 1px solid #edf0f5; border-radius: 10px; padding: 15px; }
+        .report-card h3 { font-size: 15px; margin-bottom: 12px; }
+        .report-card p { font-size: 13px; margin: 7px 0; }
+        .inline-form { display: inline; }
+        @media(max-width:700px) {
+            body { padding: 18px 10px; }
+            .section { padding: 16px; }
+            .header h1 { font-size: 25px; }
+            .actions { width: 100%; }
+            .actions .btn { flex: 1; }
+            .form-grid, .filters { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <header class="header">
+        <div>
+            <h1>📚 Library Dashboard</h1>
+            <p>Welcome{% if user_name %}, {{ user_name }}{% endif %}! Manage your library in one place.</p>
+        </div>
+        <div class="actions">
+            <a href="#add-author" class="btn btn-secondary">+ Add Author</a>
+            <a href="#add-book" class="btn btn-primary">+ Add Book</a>
+            <a href="#reports" class="btn btn-secondary">Reports</a>
+            <a href="{{ url_for('home') }}" class="btn btn-secondary">To-Do List</a>
+        </div>
+    </header>
+
+    <div class="messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="message {% if category == 'error' %}error{% endif %}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+    </div>
+
+    <!-- Dashboard summary -->
+    <div class="stats">
+        <div class="stat">Books<strong>{{ total_books }}</strong></div>
+        <div class="stat">Authors<strong>{{ total_authors }}</strong></div>
+        <div class="stat">Publishers<strong>{{ total_publishers }}</strong></div>
+        <div class="stat">Categories<strong>{{ total_categories }}</strong></div>
+        <div class="stat">Members<strong>{{ total_members }}</strong></div>
+        <div class="stat">Loans<strong>{{ total_loans }}</strong></div>
+    </div>
+
+    <!-- Add book -->
+    <section class="section" id="add-book">
+        <div class="section-header"><h2>➕ Add New Book</h2></div>
+        <form action="{{ url_for('add_book') }}" method="POST" enctype="multipart/form-data">
+            <div class="form-grid">
+                <div class="field">
+                    <label for="book-title">Book Title</label>
+                    <input id="book-title" type="text" name="title" maxlength="200" required>
+                </div>
+                <div class="field">
+                    <label for="book-price">Price</label>
+                    <input id="book-price" type="number" name="price" min="0" step="0.01" required>
+                </div>
+                <div class="field">
+                    <label for="publish-year">Publish Year</label>
+                    <input id="publish-year" type="number" name="publish_year" min="1" max="2100" required>
+                </div>
+                <div class="field">
+                    <label for="book-author">Author</label>
+                    <select id="book-author" name="author_id" required>
+                        <option value="">Select an author</option>
+                        {% for author in authors %}
+                            <option value="{{ author.author_id }}">{{ author.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="book-publisher">Publisher</label>
+                    <select id="book-publisher" name="publisher_id" required>
+                        <option value="">Select a publisher</option>
+                        {% for publisher in publishers %}
+                            <option value="{{ publisher.publisher_id }}">{{ publisher.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="book-category">Category</label>
+                    <select id="book-category" name="category_id" required>
+                        <option value="">Select a category</option>
+                        {% for category in categories %}
+                            <option value="{{ category.category_id }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="book-image">Book Cover Image</label>
+                    <input id="book-image" type="file" name="cover_image" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
+                    <p class="form-note">Optional. PNG, JPG, JPEG or WEBP. Maximum 5 MB.</p>
+                </div>
+            </div>
+            <div class="form-buttons"><button type="submit" class="btn btn-primary">Add Book</button></div>
+        </form>
+        {% if not authors or not publishers or not categories %}
+            <p class="form-note">To add a book, make sure at least one author, publisher and category exist.</p>
+        {% endif %}
+    </section>
+
+    <!-- Add author -->
+    <section class="section" id="add-author">
+        <div class="section-header"><h2>➕ Add New Author</h2></div>
+        <form action="{{ url_for('add_author') }}" method="POST" enctype="multipart/form-data">
+            <div class="form-grid">
+                <div class="field"><label for="author-name">Author Name</label><input id="author-name" type="text" name="name" maxlength="100" required></div>
+                <div class="field"><label for="author-country">Country</label><input id="author-country" type="text" name="country" maxlength="100"></div>
+                <div class="field">
+                    <label for="author-photo">Author Photo</label>
+                    <input id="author-photo" type="file" name="photo" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp">
+                    <p class="form-note">Optional. Maximum 5 MB.</p>
+                </div>
+            </div>
+            <div class="form-buttons"><button type="submit" class="btn btn-primary">Add Author</button></div>
+        </form>
+    </section>
+
+    <!-- Add publisher and category -->
+    <section class="section">
+        <div class="section-header"><h2>🏢 Publishers & Categories</h2></div>
+        <div class="form-grid">
+            <form action="{{ url_for('add_publisher') }}" method="POST">
+                <h3 style="margin-bottom:12px;font-size:16px;">Add Publisher</h3>
+                <div class="field"><label>Publisher Name</label><input type="text" name="name" maxlength="150" required></div>
+                <div class="field" style="margin-top:12px;"><label>Country</label><input type="text" name="country" maxlength="100"></div>
+                <div class="form-buttons"><button class="btn btn-primary" type="submit">Add Publisher</button></div>
+            </form>
+            <form action="{{ url_for('add_category') }}" method="POST">
+                <h3 style="margin-bottom:12px;font-size:16px;">Add Category</h3>
+                <div class="field"><label>Category Name</label><input type="text" name="name" maxlength="100" required></div>
+                <div class="form-buttons"><button class="btn btn-primary" type="submit">Add Category</button></div>
+            </form>
+        </div>
+    </section>
+
+    <!-- Search / F2.1 -->
+    <section class="section" id="search">
+        <div class="section-header">
+            <h2>🔎 Search Books (F2.1)</h2>
+            <a class="btn btn-secondary" href="{{ url_for('library') }}">Clear Filters</a>
+        </div>
+        <form action="{{ url_for('library') }}" method="GET">
+            <div class="filters">
+                <div class="field"><label>Title contains</label><input type="text" name="title" value="{{ title_keyword }}" placeholder="Search by title"></div>
+                <div class="field"><label>Minimum Price</label><input type="number" name="min_price" min="0" step="0.01" value="{{ min_price }}"></div>
+                <div class="field"><label>Maximum Price</label><input type="number" name="max_price" min="0" step="0.01" value="{{ max_price }}"></div>
+            </div>
+            <div style="margin-top:15px;">
+                <strong style="font-size:13px;">Categories</strong>
+                <div class="check-list">
+                    {% for category in categories %}
+                        <label><input type="checkbox" name="category_id" value="{{ category.category_id }}" {% if category.category_id|string in selected_categories %}checked{% endif %}> {{ category.name }}</label>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="form-buttons"><button type="submit" class="btn btn-primary">Search</button></div>
+        </form>
+        <p class="form-note">Results are sorted by price in ascending order.</p>
+    </section>
+
+    <!-- Books table / catalogue -->
+    <section class="section">
+        <div class="section-header"><h2>📖 Books Catalogue (F2.2)</h2><span class="count">{{ all_books|length }} books shown</span></div>
+        {% if all_books %}
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Cover</th><th>ID</th><th>Title</th><th>Price</th><th>Year</th><th>Author</th><th>Publisher</th><th>Category</th><th>Actions</th></tr></thead>
+                <tbody>
+                {% for book in all_books %}
+                    <tr>
+                        <td>
+                            {% if book.cover_image %}
+                                <img class="item-image" src="{{ url_for('static', filename=book.cover_image) }}" alt="{{ book.title }}">
+                            {% else %}<div class="no-image">No image</div>{% endif %}
+                        </td>
+                        <td>{{ book.book_id }}</td>
+                        <td><span class="item-title">{{ book.title }}</span></td>
+                        <td class="price">{{ "%.2f"|format(book.price|float) }}</td>
+                        <td>{{ book.publish_year }}</td>
+                        <td>{{ book.author_name }}</td>
+                        <td>{{ book.publisher_name }}</td>
+                        <td>{{ book.category_name }}</td>
+                        <td>
+                            <div class="row-actions">
+                                <button type="button" class="btn btn-secondary" onclick="toggleForm('book-{{ book.book_id }}')">Edit</button>
+                                <form class="delete-form" action="{{ url_for('delete_book', book_id=book.book_id) }}" method="POST" onsubmit="return confirm('Delete this book?');">
+                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                </form>
+                            </div>
+                            <div class="edit-form" id="book-{{ book.book_id }}">
+                                <form action="{{ url_for('edit_book', book_id=book.book_id) }}" method="POST" enctype="multipart/form-data">
+                                    <div class="field"><label>Title</label><input type="text" name="title" value="{{ book.title }}" maxlength="200" required></div>
+                                    <div class="field"><label>Price</label><input type="number" name="price" value="{{ book.price }}" min="0" step="0.01" required></div>
+                                    <div class="field"><label>Publish Year</label><input type="number" name="publish_year" value="{{ book.publish_year }}" min="1" max="2100" required></div>
+                                    <div class="field"><label>Author</label>
+                                        <select name="author_id" required>{% for author in authors %}<option value="{{ author.author_id }}" {% if author.author_id == book.author_id %}selected{% endif %}>{{ author.name }}</option>{% endfor %}</select>
+                                    </div>
+                                    <div class="field"><label>Publisher</label>
+                                        <select name="publisher_id" required>{% for publisher in publishers %}<option value="{{ publisher.publisher_id }}" {% if publisher.publisher_id == book.publisher_id %}selected{% endif %}>{{ publisher.name }}</option>{% endfor %}</select>
+                                    </div>
+                                    <div class="field"><label>Category</label>
+                                        <select name="category_id" required>{% for category in categories %}<option value="{{ category.category_id }}" {% if category.category_id == book.category_id %}selected{% endif %}>{{ category.name }}</option>{% endfor %}</select>
+                                    </div>
+                                    <div class="field"><label>New Cover (Optional)</label><input type="file" name="cover_image" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"></div>
+                                    <div class="form-buttons">
+                                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                                        <button type="button" class="btn btn-secondary" onclick="toggleForm('book-{{ book.book_id }}')">Cancel</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}<div class="empty"><h3>No books found</h3><p>Try changing the search filters or add a new book.</p></div>{% endif %}
+    </section>
+
+    <!-- Authors -->
+    <section class="section">
+        <div class="section-header"><h2>✍️ Authors</h2><span class="count">{{ authors|length }} authors</span></div>
+        {% if authors %}
+        <div class="table-wrapper"><table>
+            <thead><tr><th>Photo</th><th>ID</th><th>Name</th><th>Country</th><th>Actions</th></tr></thead>
+            <tbody>
+            {% for author in authors %}
+                <tr>
+                    <td>{% if author.photo %}<img class="author-image" src="{{ url_for('static', filename=author.photo) }}" alt="{{ author.name }}">{% else %}<div class="no-image author-placeholder"></div>{% endif %}</td>
+                    <td>{{ author.author_id }}</td><td><span class="item-title">{{ author.name }}</span></td><td>{{ author.country or '—' }}</td>
+                    <td>
+                        <div class="row-actions">
+                            <button type="button" class="btn btn-secondary" onclick="toggleForm('author-{{ author.author_id }}')">Edit</button>
+                            <form class="delete-form" action="{{ url_for('delete_author', author_id=author.author_id) }}" method="POST" onsubmit="return confirm('Delete this author and their books?');"><button class="btn btn-danger" type="submit">Delete</button></form>
+                        </div>
+                        <div class="edit-form" id="author-{{ author.author_id }}">
+                            <form action="{{ url_for('edit_author', author_id=author.author_id) }}" method="POST" enctype="multipart/form-data">
+                                <div class="field"><label>Name</label><input type="text" name="name" value="{{ author.name }}" maxlength="100" required></div>
+                                <div class="field"><label>Country</label><input type="text" name="country" value="{{ author.country or '' }}" maxlength="100"></div>
+                                <div class="field"><label>New Photo (Optional)</label><input type="file" name="photo" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"></div>
+                                <div class="form-buttons"><button class="btn btn-primary" type="submit">Save Changes</button><button class="btn btn-secondary" type="button" onclick="toggleForm('author-{{ author.author_id }}')">Cancel</button></div>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table></div>
+        {% else %}<div class="empty">No authors yet.</div>{% endif %}
+    </section>
+
+    <!-- Members and loans -->
+    <section class="section" id="members">
+        <div class="section-header"><h2>👥 Members</h2><span class="count">{{ members|length }} members</span></div>
+        <form action="{{ url_for('add_member') }}" method="POST">
+            <div class="form-grid">
+                <div class="field"><label>Member Name</label><input type="text" name="name" maxlength="150" required></div>
+                <div class="field"><label>Email</label><input type="email" name="email" maxlength="150" required></div>
+                <div class="field"><label>Join Date</label><input type="date" name="join_date" required></div>
+            </div>
+            <div class="form-buttons"><button class="btn btn-primary" type="submit">Add Member</button></div>
+        </form>
+        {% if members %}
+        <div class="table-wrapper" style="margin-top:18px;"><table>
+            <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Join Date</th></tr></thead>
+            <tbody>{% for member in members %}<tr><td>{{ member.member_id }}</td><td>{{ member.name }}</td><td>{{ member.email }}</td><td>{{ member.join_date }}</td></tr>{% endfor %}</tbody>
+        </table></div>
+        {% endif %}
+    </section>
+
+    <section class="section" id="loans">
+        <div class="section-header"><h2>📅 Loans</h2><span class="count">{{ loans|length }} loans</span></div>
+        <form action="{{ url_for('add_loan') }}" method="POST">
+            <div class="form-grid">
+                <div class="field"><label>Book</label><select name="book_id" required><option value="">Select a book</option>{% for book in loan_books %}<option value="{{ book.book_id }}">{{ book.title }}</option>{% endfor %}</select></div>
+                <div class="field"><label>Member</label><select name="member_id" required><option value="">Select a member</option>{% for member in members %}<option value="{{ member.member_id }}">{{ member.name }}</option>{% endfor %}</select></div>
+                <div class="field"><label>Loan Date</label><input type="date" name="loan_date" required></div>
+                <div class="field"><label>Return Date (Optional)</label><input type="date" name="return_date"></div>
+            </div>
+            <div class="form-buttons"><button class="btn btn-primary" type="submit">Record Loan</button></div>
+        </form>
+        {% if loans %}
+        <div class="table-wrapper" style="margin-top:18px;"><table>
+            <thead><tr><th>Loan ID</th><th>Book</th><th>Member</th><th>Loan Date</th><th>Return Date</th><th>Action</th></tr></thead>
+            <tbody>
+            {% for loan in loans %}
+                <tr><td>{{ loan.loan_id }}</td><td>{{ loan.book_title }}</td><td>{{ loan.member_name }}</td><td>{{ loan.loan_date }}</td><td>{{ loan.return_date or 'Not returned' }}</td>
+                    <td>{% if not loan.return_date %}<form class="inline-form" action="{{ url_for('return_loan', loan_id=loan.loan_id) }}" method="POST"><button class="btn btn-secondary" type="submit">Mark Returned</button></form>{% else %}—{% endif %}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table></div>
+        {% else %}<div class="empty">No loans recorded yet.</div>{% endif %}
+    </section>
+
+    <!-- Reports F2.3-F2.6 -->
+    <section class="section" id="reports">
+        <div class="section-header"><h2>📊 Reports (F2.3 – F2.6)</h2></div>
+
+        <h3 style="font-size:17px;margin-bottom:12px;">F2.3 – General Statistics</h3>
+        <div class="report-grid">
+            <div class="report-card">
+                <h3>Books by Category</h3>
+                {% for row in category_report %}
+                    <p><strong>{{ row.category_name }}</strong>: {{ row.total_books }} books · Average price: {% if row.average_price is not none %}{{ "%.2f"|format(row.average_price|float) }}{% else %}N/A{% endif %}</p>
+                {% else %}<p class="muted">No category data.</p>{% endfor %}
+            </div>
+            <div class="report-card">
+                <h3>Authors with at Least 2 Books</h3>
+                {% for row in authors_with_two_books %}<p>{{ row.author_name }} — {{ row.total_books }} books</p>{% else %}<p class="muted">No authors match this condition.</p>{% endfor %}
+            </div>
+            <div class="report-card">
+                <h3>Book Price Statistics</h3>
+                <p>Total value: <strong>{{ "%.2f"|format((price_report.total_price or 0)|float) }}</strong></p>
+                <p>Minimum price: <strong>{{ price_report.smallest_price if price_report.smallest_price is not none else 'N/A' }}</strong></p>
+                <p>Maximum price: <strong>{{ price_report.largest_price if price_report.largest_price is not none else 'N/A' }}</strong></p>
+            </div>
+        </div>
+
+        <h3 style="font-size:17px;margin:24px 0 12px;">F2.4 – Items and Members with No Activity</h3>
+        <div class="report-grid">
+            <div class="report-card"><h3>Unreturned Loans</h3>
+                {% for row in unreturned_loans %}<p>{{ row.book_title }} · {{ row.member_name }} · {{ row.loan_date }}</p>{% else %}<p class="muted">No unreturned loans.</p>{% endfor %}
+            </div>
+            <div class="report-card"><h3>Members Who Never Borrowed</h3>
+                {% for row in members_never_borrowed %}<p>{{ row.name }} ({{ row.email }})</p>{% else %}<p class="muted">All members have borrowed.</p>{% endfor %}
+            </div>
+            <div class="report-card"><h3>Books Never Borrowed</h3>
+                {% for row in books_never_borrowed %}<p>{{ row.title }} · {{ row.price }}</p>{% else %}<p class="muted">All books have been borrowed.</p>{% endfor %}
+            </div>
+        </div>
+
+        <h3 style="font-size:17px;margin:24px 0 12px;">F2.5 – Most Popular</h3>
+        <div class="report-grid">
+            <div class="report-card"><h3>Top 3 Borrowed Books</h3>
+                {% for row in top_books %}<p>{{ loop.index }}. <strong>{{ row.title }}</strong> — {{ row.total_loans }} loans</p>{% else %}<p class="muted">No loan data.</p>{% endfor %}
+            </div>
+            <div class="report-card"><h3>Member with Most Loans</h3>
+                {% if top_member %}<p><strong>{{ top_member.member_name }}</strong></p><p>{{ top_member.total_loans }} loans</p>{% else %}<p class="muted">No loan data.</p>{% endif %}
+            </div>
+        </div>
+
+        <h3 style="font-size:17px;margin:24px 0 12px;">F2.6 – Author and Publisher Analysis</h3>
+        <div class="report-grid">
+            <div class="report-card"><h3>All Authors and Their Book Counts</h3>
+                {% for row in author_book_counts %}<p>{{ row.author_name }} — {{ row.total_books }} books</p>{% else %}<p class="muted">No authors found.</p>{% endfor %}
+            </div>
+            <div class="report-card"><h3>Books with Author and Publisher from Same Country</h3>
+                {% for row in same_country_books %}<p><strong>{{ row.title }}</strong><br><span class="muted">{{ row.author_name }} ({{ row.author_country }}) · {{ row.publisher_name }} ({{ row.publisher_country }})</span></p>{% else %}<p class="muted">No matching books.</p>{% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">Library Management System</footer>
+</div>
+
+<script>
+    function toggleForm(formId) {
+        const form = document.getElementById(formId);
+        if (form) form.classList.toggle("open");
+    }
+</script>
+</body>
+</html>
